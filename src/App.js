@@ -5,13 +5,25 @@ import { Modal, ModalBody, Button, Card, CardImg, CardBody, CardTitle, CardSubti
 import { BrowserRouter as Router, Route, Redirect } from 'react-router-dom';
 import { instanceOf } from 'prop-types';
 import { withCookies, Cookies } from 'react-cookie';
+
+import { createStore, applyMiddleware } from 'redux';
+import logger from 'redux-logger';
+import { Provider } from 'react-redux';
+import { reducer } from './reducers';
+
 import { Favourite } from './components/Favourite';
-import { Home } from './components/Home';
+import Home from './components/Home';
 import { Search } from './components/Search';
 import { Header } from './components/Header';
+import thunk from 'redux-thunk';
 
 
+const store = createStore(
+  reducer,
+  applyMiddleware(thunk, logger)
+);
 class App extends Component {
+
 
   constructor(props) {
     super(props);
@@ -29,7 +41,6 @@ class App extends Component {
       inSearch: false,
       isLoading: false
     }
-    this.handleOnScroll = this.handleOnScroll.bind(this);
     this.handleOnKeyUp = this.handleOnKeyUp.bind(this);
     this.loadBeers = this.loadBeers.bind(this);
     this.searchBeers = this.searchBeers.bind(this);
@@ -45,25 +56,7 @@ class App extends Component {
     cookies: instanceOf(Cookies).isRequired
   };
 
-  componentDidMount() {
-    this.loadBeers();
-    window.addEventListener('scroll', this.handleOnScroll);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('scroll', this.handleOnScroll);
-  }
-
-  handleOnScroll() {
-    var scrollTop = (document.documentElement && document.documentElement.scrollTop) || document.body.scrollTop;
-    var scrollHeight = (document.documentElement && document.documentElement.scrollHeight) || document.body.scrollHeight;
-    var clientHeight = document.documentElement.clientHeight || window.innerHeight;
-    var scrolledToBottom = Math.ceil(scrollTop + clientHeight) >= scrollHeight;
-
-    if (scrolledToBottom) {
-      this.loadBeers();
-    }
-  }
+  
 
   handleOnKeyUp(e) {
     if (e.target.value !== "") {
@@ -175,108 +168,110 @@ class App extends Component {
 
   render() {
     return (
-      <Router>
-        <div>
-          <Header {...this.props} handleOnKeyUp={this.handleOnKeyUp} inSearch={this.state.inSearch} clearSearch={this.clearSearch} />
-          <div className="container mt-5">
-            <Route exact path='/' render={(props) => {
-              return (<Home
-                {...props}
-                loadBeers={this.loadBeers}
-                isLoading={this.state.isLoading}
-                onClick={this.toggle}
-                beers={this.state.beers}
-                handleFavorite={this.handleFavorite}
-                checkFavoritos={this.checkFavoritos}
-                page={this.state.page}
-                updateInSearch={this.updateInSearch}
-              />)
-            }}
-            />
-            <Route exact path='/favourite' render={(props) => {
-              return (<Favourite
-                {...props}
-                onClick={this.toggle}
-                isLoading={this.state.isLoading}
-                loadFavourites={this.loadFavourites}
-                beers={this.state.favourites}
-                handleFavorite={this.handleFavorite}
-                checkFavoritos={this.checkFavoritos}
-                updateInSearch={this.updateInSearch}
-              />)
-            }} />
-            <Route exact path='/search' render={(props) => {
-              return (<Search
-                {...props}
-                loadBeers={this.loadBeers}
-                isLoading={this.state.isLoading}
-                onClick={this.toggle}
-                beers={this.state.beers}
-                handleFavorite={this.handleFavorite}
-                checkFavoritos={this.checkFavoritos}
-                page={this.state.page}
-                updateInSearch={this.updateInSearch}
-              />)
-            }}
-            />
-            {!this.state.inSearch && this.state.isTyping && <Redirect to='/search' />}
-            {this.state.inSearch && !this.state.isTyping && <Redirect to='/' />}
+      <Provider store={store}>
+        <Router>
+          <div>
+            <Header {...this.props} handleOnKeyUp={this.handleOnKeyUp} inSearch={this.state.inSearch} clearSearch={this.clearSearch} />
+            <div className="container mt-5">
+              <Route exact path='/' render={(props) => {
+                return (<Home
+                  {...props}
+                  loadBeers={this.loadBeers}
+                  isLoading={this.state.isLoading}
+                  onClick={this.toggle}
+                  beers={this.state.beers}
+                  handleFavorite={this.handleFavorite}
+                  checkFavoritos={this.checkFavoritos}
+                  page={this.state.page}
+                  updateInSearch={this.updateInSearch}
+                />)
+              }}
+              />
+              <Route exact path='/favourite' render={(props) => {
+                return (<Favourite
+                  {...props}
+                  onClick={this.toggle}
+                  isLoading={this.state.isLoading}
+                  loadFavourites={this.loadFavourites}
+                  beers={this.state.favourites}
+                  handleFavorite={this.handleFavorite}
+                  checkFavoritos={this.checkFavoritos}
+                  updateInSearch={this.updateInSearch}
+                />)
+              }} />
+              <Route exact path='/search' render={(props) => {
+                return (<Search
+                  {...props}
+                  loadBeers={this.loadBeers}
+                  isLoading={this.state.isLoading}
+                  onClick={this.toggle}
+                  beers={this.state.beers}
+                  handleFavorite={this.handleFavorite}
+                  checkFavoritos={this.checkFavoritos}
+                  page={this.state.page}
+                  updateInSearch={this.updateInSearch}
+                />)
+              }}
+              />
+              {!this.state.inSearch && this.state.isTyping && <Redirect to='/search' />}
+              {this.state.inSearch && !this.state.isTyping && <Redirect to='/' />}
 
 
-          </div>
+            </div>
 
-          <Modal isOpen={this.state.modal} size="lg" toggle={this.toggle} className={this.props.className}>
-            <Button color="link" onClick={(e) => this.toggle()} className="btn-close-modal">
-              <i className="fa fa-times"></i>
-            </Button>
-            <ModalBody>
-              <div className="row">
-                <div className="col-3">
-                  <img src={this.state.beer.image_url} className="img-fluid" alt={this.state.beer.name} />
-                </div>
-                <div className="col-8">
-                  <h2>{this.state.beer.name}</h2>
-                  <small>{this.state.beer.tagline}</small>
-                  <div className="line-separate"><span></span></div>
-                  <p>
-                    <b>IBU:</b> {this.state.beer.ibu}
-                    <b>ABV:</b> {this.state.beer.abv}
-                    <b>EBC:</b> {this.state.beer.ebc}
-                  </p>
-                  <p>{this.state.beer.description}</p>
-                  <p className="mt-10">
-                    <b>Best server with:</b>
-                  </p>
-                  <ul>
-                    {this.state.beer.food_pairing.map((item, i) => {
-                      return <li key={i}>{item}</li>
-                    })}
-                  </ul>
-                  <h3>You might also like:</h3>
-                  <div className="row similar-container">
-                    {this.state.similar.map((item, i) => {
-                      return (
-                        <div key={item.id} className="col-lg-4 col-md-4 col-sm-6 col-xs-12">
-                          <Card>
-                            <div className="card-container" >
-                              <CardImg top width="100%" src={item.image_url} alt={item.name} />
-                              <CardBody>
-                                <CardTitle>{item.name}</CardTitle>
-                                <CardSubtitle>{item.tagline}</CardSubtitle>
-                              </CardBody>
-                            </div>
-                          </Card>
-                        </div>
-                      )
-                    })}
+            <Modal isOpen={this.state.modal} size="lg" toggle={this.toggle} className={this.props.className}>
+              <Button color="link" onClick={(e) => this.toggle()} className="btn-close-modal">
+                <i className="fa fa-times"></i>
+              </Button>
+              <ModalBody>
+                <div className="row">
+                  <div className="col-3">
+                    <img src={this.state.beer.image_url} className="img-fluid" alt={this.state.beer.name} />
+                  </div>
+                  <div className="col-8">
+                    <h2>{this.state.beer.name}</h2>
+                    <small>{this.state.beer.tagline}</small>
+                    <div className="line-separate"><span></span></div>
+                    <p>
+                      <b>IBU:</b> {this.state.beer.ibu}
+                      <b>ABV:</b> {this.state.beer.abv}
+                      <b>EBC:</b> {this.state.beer.ebc}
+                    </p>
+                    <p>{this.state.beer.description}</p>
+                    <p className="mt-10">
+                      <b>Best server with:</b>
+                    </p>
+                    <ul>
+                      {this.state.beer.food_pairing.map((item, i) => {
+                        return <li key={i}>{item}</li>
+                      })}
+                    </ul>
+                    <h3>You might also like:</h3>
+                    <div className="row similar-container">
+                      {this.state.similar.map((item, i) => {
+                        return (
+                          <div key={item.id} className="col-lg-4 col-md-4 col-sm-6 col-xs-12">
+                            <Card>
+                              <div className="card-container" >
+                                <CardImg top width="100%" src={item.image_url} alt={item.name} />
+                                <CardBody>
+                                  <CardTitle>{item.name}</CardTitle>
+                                  <CardSubtitle>{item.tagline}</CardSubtitle>
+                                </CardBody>
+                              </div>
+                            </Card>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-            </ModalBody>
-          </Modal>
-        </div>
-      </Router>
+              </ModalBody>
+            </Modal>
+          </div>
+        </Router>
+      </Provider>
     );
   }
 }

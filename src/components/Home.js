@@ -1,12 +1,36 @@
 import React from 'react';
+import { connect } from 'react-redux';
+import { loadBeers } from '../actions';
 import { Beer } from './Beer';
 
 
-export class Home extends React.Component {
+
+class Home extends React.Component {
 
     constructor(props) {
         super(props);
         this.props.updateInSearch(false);
+        this.handleOnScroll = this.handleOnScroll.bind(this);
+        this.props.loadBeers();
+    }
+
+    componentDidMount() {
+        window.addEventListener('scroll', this.handleOnScroll);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('scroll', this.handleOnScroll);
+    }
+
+    handleOnScroll() {
+        var scrollTop = (document.documentElement && document.documentElement.scrollTop) || document.body.scrollTop;
+        var scrollHeight = (document.documentElement && document.documentElement.scrollHeight) || document.body.scrollHeight;
+        var clientHeight = document.documentElement.clientHeight || window.innerHeight;
+        var scrolledToBottom = Math.ceil(scrollTop + clientHeight) >= scrollHeight;
+
+        if (scrolledToBottom) {
+            this.props.loadBeers();
+        }
     }
 
     renderBeer(beer) {
@@ -22,18 +46,30 @@ export class Home extends React.Component {
     }
 
     render() {
-        const { beers, isLoading } = this.props;
-        
+        const { beers, isLoading, data, isFetching } = this.props;
+
         return (
             <div className="row">
-                {beers.map(beer => this.renderBeer(beer))}
-                {isLoading && <div className="text-center mb-5 mt-5 col-12">
+                {data.map(beer => this.renderBeer(beer))}
+                {isFetching && <div className="text-center mb-5 mt-5 col-12">
                     <i className="fas fa-spinner fa-spin"></i> Loading...
                 </div>}
             </div>
         )
     }
 
-
-
 }
+
+const mapsStateToProps = (state) => {
+    return {
+        isFetching: state.isFetching,
+        data: state.data
+    }
+}
+const mapsDispatchToProps = (dispatch) => {
+    return {
+        loadBeers: () => dispatch(loadBeers())
+    }
+}
+
+export default connect(mapsStateToProps, mapsDispatchToProps)(Home);
