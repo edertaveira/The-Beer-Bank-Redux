@@ -7,12 +7,11 @@ const INITIAL_STATE = {
 export const reducer = (state = INITIAL_STATE, action) => {
     
     if (action.type === 'LOAD_BEERS_REQUEST') {
-        return {
+        return {...state,
             isFetching: true,
-            data: []
-        }
+            data: []}
     } else if (action.type === 'LOAD_BEERS_SUCCESS') {
-        return {
+        return {...state,
             isFetching: false,
             data: action.data
         }

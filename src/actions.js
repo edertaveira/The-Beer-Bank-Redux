@@ -39,6 +39,6 @@ const loadBeersRequest = () => {
 export const loadBeers = () => {
     return dispatch => {
         dispatch(loadBeersRequest())
-        Punkapi.getBeers(page++).then((data) => dispatch(loadBeersSuccess(data)));
+        Punkapi.getBeers(++page).then((data) => dispatch(loadBeersSuccess(data)));
     }
 }
